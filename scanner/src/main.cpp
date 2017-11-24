@@ -1,6 +1,13 @@
+/*
+	inet_addr is deprecated. We have to use inet_pton in WS2tcpip.h instead,
+	but just let it go.
+*/
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+
+// strcmp is not secure. Ignore the error.
 #define _CRT_SECURE_NO_WARNINGS
 
+// nlohmann json.
 #include "../inc/json.hpp"
 
 #include <windows.h>
@@ -38,18 +45,6 @@
 #define BUFFER_SIZE 1024*16
 
 using json = nlohmann::json;
-
-typedef struct _LOOKUP_ROW {
-	char			addr[128];
-	unsigned short	port;
-} LOOKUP_ROW, *PLOOKUP_ROW;
-
-typedef struct _LOOKUP_TABLE {
-	unsigned short	pid;
-	LOOKUP_ROW		local;
-	LOOKUP_ROW*		remote;
-} LOOKUP_TABLE, *PLOOKUP_TABLE;
-
 
 BOOL IsCurrentUserLocalAdministrator(void);
 
@@ -262,7 +257,7 @@ BOOL IsElevated() {
 	return fRet;
 }
 
-json BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size);
+json BuildLookupTable(void);
 
 void GetError(LPTSTR lpszFunction) {
 	LPVOID lpMsgBuf;
@@ -343,12 +338,6 @@ int main()
 
 	// enter code here.
 
-	PLOOKUP_TABLE	table = nullptr;
-	size_t			table_size = sizeof(LOOKUP_TABLE);
-
-	table = (LOOKUP_TABLE *)MALLOC(table_size);
-
-
 	// prepare udp communication.
 	int sock;
 	sockaddr_in server_addr, client_addr;
@@ -374,15 +363,13 @@ int main()
 			<< ntohs(client_addr.sin_port) << "] " << buffer << std::endl;
 
 		if (strcmp(buffer, "ping") == 0) {
-			auto payload = BuildLookupTable(table, &table_size);
+			auto payload = BuildLookupTable();
 			retv = sendto(sock, payload.dump().c_str(), payload.dump().length(), 0, (sockaddr*)&client_addr, sizeof(client_addr));
 		}
 		else {
 			retv = sendto(sock, "denied", strlen("denied"), 0, (sockaddr*)&client_addr, sizeof(client_addr));
 		}
 	}
-
-	SAFE_FREE(table);
 
 	/////////////////////////////////////////////////
 
@@ -404,10 +391,7 @@ int main()
 
 	return 0;
 }
-json BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
-	if (table == nullptr)
-		return false;
-
+json BuildLookupTable(void) {
 	PMIB_UDPTABLE_OWNER_PID	pUdpTable = nullptr;
 	PMIB_TCPTABLE2			pTcpTable = nullptr;
 	ULONG					ulSize;
