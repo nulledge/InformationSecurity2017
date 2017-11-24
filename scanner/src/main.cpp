@@ -1,5 +1,7 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 
 
+#include "../inc/json.hpp"
+
 #include <windows.h>
 #include <stdio.h>
 #include <lmcons.h>
@@ -28,6 +30,8 @@
 #define SAFE_FREE(x)	do{if(x != nullptr) FREE(x); x = nullptr;}while(false)
 #define SAFE_CLOSE(x)	do{if(x != nullptr) CloseHandle(x); x = nullptr;}while(false)
 // Note: could also use malloc() and free()
+
+using json = nlohmann::json;
 
 typedef struct _LOOKUP_ROW {
 	char			addr[128];
@@ -387,34 +391,49 @@ bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 			return false;
 	}
 
+	json payload = json::array();
+
 	// Retreive TCP table.
 	dwRetVal = GetTcpTable2(pTcpTable, &ulSize, TRUE);
 	if (dwRetVal == NO_ERROR) {
 		printf("\tNumber of TCP entries: %d\n", (int)pTcpTable->dwNumEntries);
 		for (unsigned int i = 0; i < (unsigned int)pTcpTable->dwNumEntries; i++) {
-			if (i != 0U)
-				printf("\n");
+			//if (i != 0U)
+			//	printf("\n");
+
+			json tcp_connect = json::object();
+
+			tcp_connect["type"] = "tcp/ipv4";
+			tcp_connect["local"] = json::object();
 
 			// Local addr in ipv4.
 			IpAddr.S_un.S_addr = (u_long)pTcpTable->table[i].dwLocalAddr;
 			strcpy_s(szLocalAddr, sizeof(szLocalAddr), inet_ntoa(IpAddr));
-			printf("\tTCP[%d] Local Addr: %s\n", i, szLocalAddr);
+			// printf("\tTCP[%d] Local Addr: %s\n", i, szLocalAddr);
+			tcp_connect["local"]["addr"] = szLocalAddr;
 
 			// Local port.
-			printf("\tTCP[%d] Local Port: %d \n", i,
-				ntohs((u_short)pTcpTable->table[i].dwLocalPort));
+			//printf("\tTCP[%d] Local Port: %d \n", i,
+			//	ntohs((u_short)pTcpTable->table[i].dwLocalPort));
+			tcp_connect["local"]["port"] = ntohs((u_short)pTcpTable->table[i].dwLocalPort);
+
+
+			tcp_connect["remote"] = json::object();
 
 			// Remote addr in ipv4.
 			IpAddr.S_un.S_addr = (u_long)pTcpTable->table[i].dwRemoteAddr;
 			strcpy_s(szRemoteAddr, sizeof(szRemoteAddr), inet_ntoa(IpAddr));
-			printf("\tTCP[%d] Remote Addr: %s\n", i, szRemoteAddr);
+			//printf("\tTCP[%d] Remote Addr: %s\n", i, szRemoteAddr);
+			tcp_connect["remote"]["addr"] = szRemoteAddr;
 
 			// Remote port.
-			printf("\tTCP[%d] Remote Port: %d\n", i,
-				ntohs((u_short)pTcpTable->table[i].dwRemotePort));
+			//printf("\tTCP[%d] Remote Port: %d\n", i,
+			//	ntohs((u_short)pTcpTable->table[i].dwRemotePort));
+			tcp_connect["remote"]["port"] = ntohs((u_short)pTcpTable->table[i].dwRemotePort);
 
 			// Owning process' id.
-			printf("\tTCP[%d] Owning PID: %d\n", i, pTcpTable->table[i].dwOwningPid);
+			//printf("\tTCP[%d] Owning PID: %d\n", i, pTcpTable->table[i].dwOwningPid);
+			tcp_connect["pid"] = pTcpTable->table[i].dwOwningPid;
 
 
 			TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
@@ -443,11 +462,13 @@ bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 
 			// Print the process name and identifier.
 
-			_tprintf(TEXT("\t%s  (PID: %u)\n"), szProcessName, pTcpTable->table[i].dwOwningPid);
+			//_tprintf(TEXT("\t%s  (PID: %u)\n"), szProcessName, pTcpTable->table[i].dwOwningPid);
+			tcp_connect["pname"] = szProcessName;
 
 			// Release the handle to the process.
 
 			CloseHandle(hProcess);
+			payload.push_back(tcp_connect);
 		}
 	}
 	else {
@@ -483,20 +504,28 @@ bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 	if (dwRetVal == NO_ERROR) {
 		printf("\tNumber of UDP entries: %d\n", (int)pUdpTable->dwNumEntries);
 		for (unsigned int i = 0; i < (unsigned int)pUdpTable->dwNumEntries; i++) {
-			if (i != 0U)
-				printf("\n");
+			//if (i != 0U)
+			//	printf("\n");
+
+			json udp_connect = json::object();
+			udp_connect["type"] = "udp/ipv4";
+
+			udp_connect["local"] = json::object();
 
 			// Local addr in ipv4.
 			IpAddr.S_un.S_addr = (u_long)pUdpTable->table[i].dwLocalAddr;
 			strcpy_s(szLocalAddr, sizeof(szLocalAddr), inet_ntoa(IpAddr));
-			printf("\tUDP[%d] Local Addr: %s\n", i, szLocalAddr);
+			//printf("\tUDP[%d] Local Addr: %s\n", i, szLocalAddr);
+			udp_connect["local"]["addr"] = szLocalAddr;
 
 			// Local port.
-			printf("\tUDP[%d] Local Port: %d \n", i,
-				ntohs((u_short)pUdpTable->table[i].dwLocalPort));
+			//printf("\tUDP[%d] Local Port: %d \n", i,
+			//	ntohs((u_short)pUdpTable->table[i].dwLocalPort));
+			udp_connect["local"]["port"] = ntohs((u_short)pUdpTable->table[i].dwLocalPort);
 
 			// Owning process' id.
-			printf("\tUDP[%d] Owning PID: %d\n", i, pUdpTable->table[i].dwOwningPid);
+			//printf("\tUDP[%d] Owning PID: %d\n", i, pUdpTable->table[i].dwOwningPid);
+			udp_connect["pid"] = pUdpTable->table[i].dwOwningPid;
 
 			TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
 
@@ -523,10 +552,12 @@ bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 
 
 			// Print the process name and identifier.
-			_tprintf(TEXT("\t%s  (PID: %u)\n"), szProcessName, pUdpTable->table[i].dwOwningPid);
+			//_tprintf(TEXT("\t%s  (PID: %u)\n"), szProcessName, pUdpTable->table[i].dwOwningPid);
+			udp_connect["pname"] = szProcessName;
 
 			// Release the handle to the process.
 			CloseHandle(hProcess);
+			payload.push_back(udp_connect);
 		}
 	}
 	else {
@@ -537,6 +568,8 @@ bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 	SAFE_FREE(pUdpTable);
 
 	assert(pUdpTable == nullptr);
+
+	std::cout << payload.dump() << std::endl;
 
 	return true;
 }
