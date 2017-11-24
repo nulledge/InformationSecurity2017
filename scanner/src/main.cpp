@@ -1,4 +1,5 @@
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "../inc/json.hpp"
 
@@ -20,16 +21,21 @@
 #include "tchar.h"
 #include "psapi.h"
 
+// Header required to use udp.
+//#include <WinSock2.h>
+
 // Need to link with Iphlpapi.lib and Ws2_32.lib
 #pragma comment(lib, "iphlpapi.lib")
-#pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Advapi32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 #define MALLOC(x)		HeapAlloc(GetProcessHeap(), 0, (x))
 #define FREE(x)			HeapFree(GetProcessHeap(), 0, (x))
 #define SAFE_FREE(x)	do{if(x != nullptr) FREE(x); x = nullptr;}while(false)
 #define SAFE_CLOSE(x)	do{if(x != nullptr) CloseHandle(x); x = nullptr;}while(false)
 // Note: could also use malloc() and free()
+
+#define BUFFER_SIZE 1024*16
 
 using json = nlohmann::json;
 
@@ -256,7 +262,7 @@ BOOL IsElevated() {
 	return fRet;
 }
 
-bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size);
+json BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size);
 
 void GetError(LPTSTR lpszFunction) {
 	LPVOID lpMsgBuf;
@@ -292,6 +298,10 @@ void GetError(LPTSTR lpszFunction) {
 
 int main()
 {
+	WORD versionWanted = MAKEWORD(1, 1);
+	WSADATA wsaData;
+	WSAStartup(versionWanted, &wsaData);
+
 	if (IsCurrentUserLocalAdministrator())
 		printf("You are an administrator\n");
 	else
@@ -338,8 +348,39 @@ int main()
 
 	table = (LOOKUP_TABLE *)MALLOC(table_size);
 
-	bool ret = BuildLookupTable(table, &table_size);
-	printf("Return: %d\n", ret);
+
+	// prepare udp communication.
+	int sock;
+	sockaddr_in server_addr, client_addr;
+	int port = 12314;
+	int retv;
+
+	char buffer[BUFFER_SIZE];
+
+	memset(&server_addr, NULL, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(port);
+	server_addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	retv = bind(sock, (sockaddr*)&server_addr, sizeof(server_addr));
+
+	while (true) {
+		int addr_len = sizeof(client_addr);
+		retv = recvfrom(sock, buffer, BUFFER_SIZE, 0, (sockaddr*)&client_addr, (int*)&addr_len);
+
+		std::cout << "[UDP/" << inet_ntoa(client_addr.sin_addr) << ":"
+			<< ntohs(client_addr.sin_port) << "] " << buffer << std::endl;
+
+		if (strcmp(buffer, "ping") == 0) {
+			auto payload = BuildLookupTable(table, &table_size);
+			retv = sendto(sock, payload.dump().c_str(), payload.dump().length(), 0, (sockaddr*)&client_addr, sizeof(client_addr));
+		}
+		else {
+			retv = sendto(sock, "denied", strlen("denied"), 0, (sockaddr*)&client_addr, sizeof(client_addr));
+		}
+	}
 
 	SAFE_FREE(table);
 
@@ -363,7 +404,7 @@ int main()
 
 	return 0;
 }
-bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
+json BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 	if (table == nullptr)
 		return false;
 
@@ -569,7 +610,5 @@ bool BuildLookupTable(_Out_ PLOOKUP_TABLE table, _Inout_ size_t* size) {
 
 	assert(pUdpTable == nullptr);
 
-	std::cout << payload.dump() << std::endl;
-
-	return true;
+	return payload;
 }
