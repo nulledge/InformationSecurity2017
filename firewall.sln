@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scanner", "scanner\scanner.vcxproj", "{5EE08F5E-3FCD-4196-8382-6A21A949FF42}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client", "client\client.vcxproj", "{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{5EE08F5E-3FCD-4196-8382-6A21A949FF42}.Release|x64.Build.0 = Release|x64
 		{5EE08F5E-3FCD-4196-8382-6A21A949FF42}.Release|x86.ActiveCfg = Release|Win32
 		{5EE08F5E-3FCD-4196-8382-6A21A949FF42}.Release|x86.Build.0 = Release|Win32
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Debug|x64.ActiveCfg = Debug|x64
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Debug|x64.Build.0 = Debug|x64
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Debug|x86.ActiveCfg = Debug|Win32
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Debug|x86.Build.0 = Debug|Win32
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Release|x64.ActiveCfg = Release|x64
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Release|x64.Build.0 = Release|x64
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Release|x86.ActiveCfg = Release|Win32
+		{1913F202-B6A4-4BDD-991A-A7EDEE7395EB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
