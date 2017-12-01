@@ -423,6 +423,51 @@ json BuildLookupTable(void) {
 	if (dwRetVal == NO_ERROR) {
 		printf("\tNumber of TCP entries: %d\n", (int)pTcpTable->dwNumEntries);
 		for (unsigned int i = 0; i < (unsigned int)pTcpTable->dwNumEntries; i++) {
+			if (pTcpTable->table[i].dwState == MIB_TCP_STATE_TIME_WAIT) {
+				continue;
+			}
+			/*switch (pTcpTable->table[i].dwState) {
+			case MIB_TCP_STATE_CLOSED:
+				printf("CLOSED\n");
+				break;
+			case MIB_TCP_STATE_LISTEN:
+				printf("LISTEN\n");
+				break;
+			case MIB_TCP_STATE_SYN_SENT:
+				printf("SYN-SENT\n");
+				break;
+			case MIB_TCP_STATE_SYN_RCVD:
+				printf("SYN-RECEIVED\n");
+				break;
+			case MIB_TCP_STATE_ESTAB:
+				printf("ESTABLISHED\n");
+				break;
+			case MIB_TCP_STATE_FIN_WAIT1:
+				printf("FIN-WAIT-1\n");
+				break;
+			case MIB_TCP_STATE_FIN_WAIT2:
+				printf("FIN-WAIT-2 \n");
+				break;
+			case MIB_TCP_STATE_CLOSE_WAIT:
+				printf("CLOSE-WAIT\n");
+				break;
+			case MIB_TCP_STATE_CLOSING:
+				printf("CLOSING\n");
+				break;
+			case MIB_TCP_STATE_LAST_ACK:
+				printf("LAST-ACK\n");
+				break;
+			case MIB_TCP_STATE_TIME_WAIT:
+				printf("TIME-WAIT\n");
+				break;
+			case MIB_TCP_STATE_DELETE_TCB:
+				printf("DELETE-TCB\n");
+				break;
+			default:
+				printf("UNKNOWN dwState value\n");
+				break;
+			}*/
+
 			//if (i != 0U)
 			//	printf("\n");
 
