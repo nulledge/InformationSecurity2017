@@ -291,7 +291,10 @@ void GetError(LPTSTR lpszFunction) {
 	return;
 }
 
-int main()
+int WinMain(HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPTSTR    lpCmdLine,
+	int       cmdShow)
 {
 	WORD versionWanted = MAKEWORD(1, 1);
 	WSADATA wsaData;
